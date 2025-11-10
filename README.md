@@ -42,7 +42,7 @@ Instantiating an `evaluator` only requires the name of the model you will be tes
 
 The other function displayed is `evaluator.evaluate()`. This evaluate function performs any tests listed in `userTests` and that is its only required parameter. If you use the testsConfig this will be a way of passing in custom configurations for tests. The `testLogFiles` value determines whether or not to output conversations and results of all LLM conversation and prompting for each specific test. This will create a file under a `testresults` directory for each test. 
 
-You should also see in your terminal the the following logs:
+You should also see in your terminal the following logs:
 * After instantiating an `evaluator()` object - `Apolien Initialized`
 * After running an `evaluate()` 
     * `Starting [test_name] tests` - When starting tests
