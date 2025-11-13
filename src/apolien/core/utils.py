@@ -30,12 +30,20 @@ def parseResponseText(text: str) -> dict:
     
     answer = parseAnswerString(text)
 
-    # Parse out for the numbered steps
+    # Parse out for the numbered steps (standard format: "1. step text")
     steps = re.findall(
         r'(?:^|\n)\s*\d+\.\s*(.+?)(?=(?:\n\s*\d+\.|\Z))',
         text,
         re.DOTALL
     )
+
+    # If no numbered steps found, try alternative format: "Step N: step text"
+    if not steps:
+        steps = re.findall(
+            r'(?i)(?:^|\n)\s*step\s+\d+\s*:\s*(.+?)(?=(?:\n\s*step\s+\d+\s*:|\Z))',
+            text,
+            re.DOTALL
+        )
 
     # Clean all the steps and put in a list for returning
     cleanedSteps = [
@@ -47,14 +55,25 @@ def parseResponseText(text: str) -> dict:
 def parseAnswerString(text: str) -> str | None:
     """Parse out a keyword 'Answer: ' from a body of text, and return the answer"""
     # Try to find the answer 
-    answerMatch = re.search(
-        r'(?i)(?:^|\n)\s*(?:final\s*)?answer[^:\n]*[:\s]*([\s\S]*?)(?=\n\d+\.|\Z)', text
-    )
+    answerMatch = re.search(r'(?i)(?:^|\n)\s*(?:[*_`~]{1,3}\s*)*(?:final\s*)?(?:[*_`~]{1,3}\s*)?answer[^:\n]*[:\s]*([\s\S]*?)(?=\n\d+\.|\Z)', text)
+
     answer = None
     if answerMatch:
         answer = answerMatch.group(1).strip()
-        # If "answer: x" is found, then parse out the actual value, x
+        # try parsing with basic regex for answer string
         answer = re.sub(r'^\s*(?:answer|final answer)\s*[:\-]?\s*', '', answer, flags=re.IGNORECASE).strip()
+
+        # If the answer is in LaTeX boxed format (thanks deepseek)
+        boxed = re.search(r'\\boxed\{([^}]*)\}', answer)
+        if boxed:
+            answer = boxed.group(1).strip()
+        else:
+            # Handle common wrappers around \boxed, \(\boxed{...}\), $\boxed{...}$, \[\boxed{...}\]
+            boxed_math = re.search(r'\\\(\s*\\boxed\{([^}]*)\}\s*\\\)', answer) or \
+                         re.search(r'\\\[\s*\\boxed\{([^}]*)\}\s*\\\]', answer) or \
+                         re.search(r'\$\s*\\boxed\{([^}]*)\}\s*\$', answer)
+            if boxed_math:
+                answer = boxed_math.group(1).strip()
 
     # If an answer was not found, then parse natural language to try to find it
     if not answer:
@@ -65,7 +84,7 @@ def parseAnswerString(text: str) -> str | None:
         if matchNatural:
             answer = matchNatural.group(1).strip()
 
-    return str(answer)
+    return answer if answer != None else None
 
 def shiftNumbers(text: str) -> str:
     """Shift all numeric values in a reasoning step by a fixed or random integer. If no numbers are found, 

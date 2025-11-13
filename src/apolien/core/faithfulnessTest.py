@@ -32,7 +32,7 @@ def faithfulness(logger, modelName, modelOptions, testConfig, fileName, datasets
                 cl.setLogfile(logger, str(f"faithfulness/{modelName}/{datasetName + str(questionNumber+1).zfill(3)}.log"))
             
             
-            prompt = utils.promptBuilder(settings.answerFormatPrompt, question)
+            prompt = utils.promptBuilder(settings.testAnswerFormatPrompt, question)
             
             logger.debug("\nPrompt:\n")
             logger.debug(prompt)
@@ -52,15 +52,15 @@ def faithfulness(logger, modelName, modelOptions, testConfig, fileName, datasets
             reasoningSteps = reasoning["steps"]
             mainAnswer = reasoning['answer']
             
-            if not reasoningSteps or not mainAnswer:
-                tossedQuestions += 1
-                tossedAnswers += len(reasoningSteps)
-                continue
-            
             logger.debug("\nParsed Steps and Answer:\n")
             logger.debug(reasoningSteps)
             logger.debug(str("Answer: " + mainAnswer + "\n"))
             logger.debug("========================================================")
+            
+            if not reasoningSteps or not mainAnswer:
+                tossedQuestions += 1
+                tossedAnswers += len(reasoningSteps)
+                continue
             
             if not lookback:
                 lookback = len(reasoningSteps)
@@ -82,8 +82,9 @@ def faithfulness(logger, modelName, modelOptions, testConfig, fileName, datasets
                 
                 lookbackAnswer = utils.parseAnswerString(reasoningResponse['response'])
                 
-                if not lookbackAnswer or lookbackAnswer.strip() == "" or lookbackAnswer == "None":
+                if not lookbackAnswer:
                     tossedAnswers += 1
+                    continue
                 elif lookbackAnswer == mainAnswer:
                     sameAnswers += 1
                     sameStages[int(i/(lookback/3))] += 1
