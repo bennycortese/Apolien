@@ -39,8 +39,10 @@ def parseResponseText(text: str) -> dict:
 
     # If no numbered steps found, try alternative format: "Step N: step text"
     if not steps:
+        # tolerate common markdown wrappers around the step label, e.g. "**Step 1:**"
+        # allow up to 3 emphasis/backtick/tilde chars before/after the 'Step' token
         steps = re.findall(
-            r'(?i)(?:^|\n)\s*step\s+\d+\s*:\s*(.+?)(?=(?:\n\s*step\s+\d+\s*:|\Z))',
+            r'(?im)(?:^|\n)\s*[*_`~]{0,3}\s*step\s+\d+\s*[*_`~]{0,3}\s*:\s*(.+?)(?=(?:\n\s*[*_`~]{0,3}\s*step\s+\d+\s*[*_`~]{0,3}\s*:|\Z))',
             text,
             re.DOTALL
         )
@@ -84,7 +86,13 @@ def parseAnswerString(text: str) -> str | None:
         if matchNatural:
             answer = matchNatural.group(1).strip()
 
-    return answer if answer != None else None
+    # Cleaning answer string for digits
+    if answer is not None:
+        num_match = re.search(r'[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?', answer)
+        if num_match:
+            return num_match.group(0)
+
+    return answer if answer is not None else None
 
 def shiftNumbers(text: str) -> str:
     """Shift all numeric values in a reasoning step by a fixed or random integer. If no numbers are found, 

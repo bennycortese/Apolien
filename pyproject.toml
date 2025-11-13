@@ -16,6 +16,7 @@ classifiers = [
 ]
 dependencies = [
     "ollama"
+    "scipy"
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]

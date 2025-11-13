@@ -16,6 +16,7 @@ def faithfulness(logger, modelName, modelOptions, testConfig, fileName, datasets
     sameAnswers = 0
     tossedAnswers = 0
     tossedQuestions = 0
+    processedQuestions = 0
     sameStages = {0: 0,
                   1: 0,
                   2: 0}
@@ -32,10 +33,9 @@ def faithfulness(logger, modelName, modelOptions, testConfig, fileName, datasets
                 cl.setLogfile(logger, str(f"faithfulness/{modelName}/{datasetName + str(questionNumber+1).zfill(3)}.log"))
             
             
-            prompt = utils.promptBuilder(settings.testAnswerFormatPrompt, question)
+            prompt = utils.promptBuilder(settings.answerFormatPrompt, question)
             
-            logger.debug("\nPrompt:\n")
-            logger.debug(prompt)
+            logger.debug(f"\nPrompt:\n{prompt}")
             
             response = ollama.generate(
                                         model=modelName,
@@ -43,24 +43,18 @@ def faithfulness(logger, modelName, modelOptions, testConfig, fileName, datasets
                                         options=modelOptions
                                     )
             
-            logger.debug("\nResponse:\n")
-            logger.debug(response["response"])
-            
-            logger.debug("----------------------------Beginning CoT Analysis----------------------------")
-            
             reasoning = utils.parseResponseText(response['response'])
             reasoningSteps = reasoning["steps"]
             mainAnswer = reasoning['answer']
             
-            logger.debug("\nParsed Steps and Answer:\n")
-            logger.debug(reasoningSteps)
-            logger.debug(str("Answer: " + mainAnswer + "\n"))
-            logger.debug("========================================================")
+            logger.debug(f"\nResponse:\n\n{response['response']}\n----------------------------Beginning CoT Analysis----------------------------\n\nParsed Steps and Answer:\n\n{reasoningSteps}\nAnswer: {mainAnswer}\n\n========================================================")
             
-            if not reasoningSteps or not mainAnswer:
+            if not reasoningSteps or not mainAnswer or mainAnswer == "None":
                 tossedQuestions += 1
                 tossedAnswers += len(reasoningSteps)
                 continue
+            
+            processedQuestions += 1
             
             if not lookback:
                 lookback = len(reasoningSteps)
@@ -92,14 +86,8 @@ def faithfulness(logger, modelName, modelOptions, testConfig, fileName, datasets
                     differentStages[int(i/(lookback/3))] += 1
                     differentAnswers += 1
                     
-                logger.debug("Prompt:\n")
-                logger.debug(reasoningPrompt)
-                logger.debug("\nResponse:\n")
-                logger.debug(reasoningResponse['response'])
-                logger.debug("\n")
-                logger.debug(str("Parsing Answer: " + lookbackAnswer))
-                logger.debug("========================================================")
+                logger.debug(f"Prompt:\n\n{reasoningPrompt}\n\nResponse:\n\n{reasoningResponse['response']}\n\nParsing Answer: {lookbackAnswer}\n========================================================")
 
     cl.setLogfile(logger, fileName)
     
-    stats.generateAndPrintFaithfulnessReport(logger, differentAnswers, sameAnswers, tossedAnswers, tossedQuestions, sameStages, differentStages, datasets, modelName)
+    stats.generateAndPrintFaithfulnessReport(logger, differentAnswers, sameAnswers, tossedAnswers, tossedQuestions, sameStages, differentStages, processedQuestions, datasets, modelName)
