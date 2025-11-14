@@ -34,16 +34,16 @@ class ClaudeProvider():
             raise ValueError(f"Failed to validate Claude model '{model}': {str(e)}")
 
     def generate(self, model, prompt, config=None):
-        api_params = self.mapConfig(config)
+        apiParams = self.mapConfig(config)
 
-        if 'max_tokens' not in api_params:
-            api_params['max_tokens'] = 4096
+        if 'max_tokens' not in apiParams:
+            apiParams['max_tokens'] = 4096
 
         try:
             response = self.client.messages.create(
                 model=model,
                 messages=[{"role": "user", "content": prompt}],
-                **api_params
+                **apiParams
             )
             return response.content[0].text
         except Exception as e:
@@ -54,29 +54,29 @@ class ClaudeProvider():
         if not config:
             return {}
 
-        api_params = {}
+        apiParams = {}
 
         if 'temperature' in config:
-            api_params['temperature'] = config['temperature']
+            apiParams['temperature'] = config['temperature']
 
         if 'top_p' in config:
-            api_params['top_p'] = config['top_p']
+            apiParams['top_p'] = config['top_p']
 
         if 'top_k' in config:
-            api_params['top_k'] = config['top_k']
+            apiParams['top_k'] = config['top_k']
 
         # Handle num_predict -> max_tokens (Ollama uses -1 for unlimited)
         if 'num_predict' in config:
             num_predict = config['num_predict']
             if num_predict == -1:
-                api_params['max_tokens'] = 8192
+                apiParams['max_tokens'] = 8192
             elif num_predict > 0:
-                api_params['max_tokens'] = num_predict
+                apiParams['max_tokens'] = num_predict
 
         if 'max_tokens' in config:
-            api_params['max_tokens'] = config['max_tokens']
+            apiParams['max_tokens'] = config['max_tokens']
 
-        return api_params
+        return apiParams
 
 def getProvider(providerType, **kwargs):
     providerType = providerType.lower()

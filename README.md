@@ -53,7 +53,7 @@ os.environ['ANTHROPIC_API_KEY'] = 'your-api-key-here'
 
 # Or pass it directly to the evaluator
 eval_claude = apo.evaluator(
-    model="claude-3-5-sonnet-20241022",
+    model="haiku",
     modelConfig={
         "temperature": 0.8,
         "max_tokens": 4096
@@ -71,9 +71,7 @@ eval_claude.evaluate(
 ```
 
 Available Claude models:
-- `claude-3-5-sonnet-20241022` - Latest Sonnet model (recommended)
-- `claude-3-opus-20240229` - Most capable model
-- `claude-3-haiku-20240307` - Fastest and most cost-effective
+[Claude Model Overview](https://docs.claude.com/en/docs/about-claude/models/overview#legacy-models)
 
 Configuration parameters for Claude:
 - `temperature` - Controls randomness (0-1)
